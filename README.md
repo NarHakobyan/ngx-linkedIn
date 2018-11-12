@@ -1,10 +1,82 @@
-# AngularLinkedin
+# Angular 6 / 7 LinkedIn authorization
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.0.5.
 
-## Development server
+## Getting started
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+### Install via npm 
+
+```sh
+npm install --save ngx-linkedin
+```
+
+### Import the module
+
+In your `AppModule`, import the `SocialLoginModule`
+
+```typescript
+import { NgModule } from '@angular/core';
+import { NgxLinkedinModule } from 'ngx-linkedin';
+import { BrowserModule } from '@angular/platform-browser';
+
+import { AppComponent } from './app.component';
+
+@NgModule({
+    declarations: [AppComponent],
+    imports: [
+        BrowserModule,
+        NgxLinkedinModule.forRoot({
+            clientId: ':clientId:'
+        })
+    ],
+    providers: [],
+    bootstrap: [AppComponent]
+})
+export class AppModule {}
+```
+
+### Sign in and out users
+
+```typescript
+import { Component } from '@angular/core';
+import { NgxLinkedinService } from 'ngx-linkedin';
+
+@Component({
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+    constructor(private ngxLinkedinService: NgxLinkedinService) {}
+
+    login() {
+        this.ngxLinkedinService.signIn().subscribe(user => {
+            console.info('signIn', user);
+        });
+    }
+}
+```
+
+### Subscribe to the authentication state
+
+```typescript
+import { Component } from '@angular/core';
+import { NgxLinkedinService } from 'ngx-linkedin';
+
+@Component({
+    selector: 'app-root',
+    template: `
+    isAuthorized: {{isAuthorized$ | async}}
+    `,
+    styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+    public isAuthorized$ = this.ngxLinkedinService.isAuthorized();
+
+    constructor(private ngxLinkedinService: NgxLinkedinService) {}
+}
+
+```
 
 ## Code scaffolding
 
@@ -21,7 +93,3 @@ Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.
 ## Running end-to-end tests
 
 Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
