@@ -1,8 +1,11 @@
 {
   "name": "ngx-linkedin",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "peerDependencies": {
     "@angular/common": "^7.0.0 || ^6.0.0",
     "@angular/core": "^7.0.0 || ^6.0.0"
-  }
+  },
+  "author": "Narek Hakobyan <narek.hakobyan.07@gmail.com>",
+  "description": "Linkedin authentication for angular 6 / 7",
+  "repository": "https://github.com/NarHakobyan/ngx-linkedIn"
 }
