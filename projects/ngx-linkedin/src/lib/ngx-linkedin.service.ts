@@ -1,17 +1,31 @@
-import { switchMap, filter, map } from 'rxjs/operators';
-import { BehaviorSubject, Observable, Observer, interval } from 'rxjs';
+import { Observable, interval, BehaviorSubject } from 'rxjs';
+import { switchMap, filter, map, take } from 'rxjs/operators';
 import { Injectable, InjectionToken, Inject, NgZone } from '@angular/core';
 
 import { IConfig } from './interfaces/IConfig';
 
 export const NGX_LINKEDIN_CONFIG = new InjectionToken<IConfig>('ngx-linkedin.config');
 
-declare var IN: any;
-
 @Injectable()
 export class NgxLinkedinService {
-    private _scriptLoaded$ = new BehaviorSubject<boolean>(false);
+    /**
+     * An subject that emits true if library has finished loading.
+     */
+    public sdkInitialized$ = new BehaviorSubject<boolean>(false);
+
+    /**
+     * reference to linkedIn sdk
+     */
+    private _sdkIN: any;
+
+    /**
+     * default field list
+     */
     private _fields = ['id', 'first-name', 'last-name', 'email-address', 'picture-url', 'vanityName'];
+
+    /**
+     * default scopes
+     */
     private _scope = ['r_basicprofile', 'r_emailaddress'];
 
     constructor(private ngZone: NgZone, @Inject(NGX_LINKEDIN_CONFIG) config: IConfig) {
@@ -32,28 +46,41 @@ export class NgxLinkedinService {
     }
 
     public signIn<T>() {
-        return this._onScriptLoad().pipe(
+        return this.onSdkInitialize().pipe(
             switchMap(() => this._authorize()),
             switchMap(() => this.getUserInfo<T>())
         );
     }
 
+    /**
+     * Gets the IN variable from the LinkedIN SDK.
+     */
+    public getSdkIN(): any {
+        return this._sdkIN;
+    }
+
+    /**
+     * get user profile info
+     * @param {string[]} fields
+     */
     public getProfile<T>(fields: string[] = this._fields) {
-        return Observable.create((observer: Observer<T>) =>
-            IN.API.Profile('me')
+        return new Observable<T>(subscriber =>
+            this.getSdkIN()
+                .API.Profile('me')
                 .fields(...fields)
                 .result((user: T) => {
-                    observer.next(user);
-                    observer.complete();
+                    subscriber.next(user);
+                    subscriber.complete();
                 })
-                .error((err: any) => observer.error(err))
+                .error((err: any) => subscriber.error(err))
         );
     }
 
     public isAuthorized() {
         return interval(1000).pipe(
             map(() => {
-                if (window['IN'] && IN.User) {
+                const IN = this.getSdkIN();
+                if (IN && IN.User) {
                     return <boolean>IN.User.isAuthorized();
                 }
                 return false;
@@ -62,39 +89,57 @@ export class NgxLinkedinService {
     }
 
     public onAuth(): Observable<void> {
-        return this._onScriptLoad().pipe(
-            switchMap(() =>
-                Observable.create((observer: Observer<void>) =>
-                    IN.Event.onOnce(IN, 'auth', () => {
-                        observer.next(void 0);
-                        observer.complete();
-                    })
-                )
+        return this.onSdkInitialize().pipe(
+            switchMap(
+                () =>
+                    new Observable<void>(subscriber =>
+                        this.getSdkIN().Event.onOnce(this._sdkIN, 'auth', () => {
+                            subscriber.next(void 0);
+                            subscriber.complete();
+                        })
+                    )
             )
         );
     }
 
+    public getToken(): string {
+        const IN = this.getSdkIN();
+        return IN.ENV.auth.oauth_token;
+    }
+
     public getUserInfo<T>() {
-        return Observable.create((observer: Observer<T>) =>
-            IN.API.Raw(`/people/~`)
-                .result((user: T) => {
-                    observer.next(user);
-                    observer.complete();
+        return this.raw<T>(`/people/~`);
+    }
+
+    public raw<T>(url: string) {
+        return new Observable<T>(subscriber =>
+            this.getSdkIN()
+                .API.Raw(url)
+                .result((data: T) => {
+                    subscriber.next(data);
+                    subscriber.complete();
                 })
-                .error((err: any) => observer.error(err))
+                .error((err: any) => subscriber.error(err))
         );
     }
 
-    private _onScriptLoad() {
-        return this._scriptLoaded$.pipe(filter(Boolean));
+    /**
+     * emit when sdk script was initialized and completes
+     */
+    public onSdkInitialize() {
+        return this.sdkInitialized$.pipe(
+            filter(Boolean),
+            take(1)
+        );
     }
 
     private _onLinkedInLoad() {
-        this._scriptLoaded$.next(true);
+        this._sdkIN = window['IN'];
+        this.sdkInitialized$.next(true);
         delete window['onLinkedInLoad'];
     }
 
     private _authorize(): Promise<void> {
-        return new Promise(resolve => IN.User.authorize(() => resolve()));
+        return new Promise(resolve => this.getSdkIN().User.authorize(() => resolve()));
     }
 }

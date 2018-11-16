@@ -9,9 +9,7 @@ import { NgxLinkedinService } from 'ngx-linkedin';
 export class AppComponent {
     public isAuthorized$ = this.ngxLinkedinService.isAuthorized();
 
-    constructor(private ngxLinkedinService: NgxLinkedinService) {
-        this.ngxLinkedinService.onAuth().subscribe(console.info);
-    }
+    constructor(private ngxLinkedinService: NgxLinkedinService) {}
 
     login() {
         this.ngxLinkedinService.signIn().subscribe(data => {
@@ -23,5 +21,10 @@ export class AppComponent {
         this.ngxLinkedinService.getUserInfo().subscribe(data => {
             console.info('signIn', data);
         });
+    }
+
+    getOauthToken() {
+        const token = this.ngxLinkedinService.getToken();
+        console.info(token);
     }
 }
