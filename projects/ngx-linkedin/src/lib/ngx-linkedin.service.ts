@@ -34,7 +34,7 @@ export class NgxLinkedinService {
 
         const linkedIn = document.createElement('script');
         linkedIn.type = 'text/javascript';
-        linkedIn.src = 'http://platform.linkedin.com/in.js';
+        linkedIn.src = (config.ssl ? 'https' : 'http') + '://platform.linkedin.com/in.js';
         linkedIn.innerHTML = `
         api_key: ${config.clientId}
         authorize: ${config.authorize || false}
@@ -59,10 +59,6 @@ export class NgxLinkedinService {
         return this._sdkIN;
     }
 
-    /**
-     * get user profile info
-     * @param {string[]} fields
-     */
     public getProfile<T>(fields: string[] = this._fields) {
         return new Observable<T>(subscriber =>
             this.getSdkIN()

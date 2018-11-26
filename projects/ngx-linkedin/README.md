@@ -20,13 +20,15 @@ import { NgxLinkedinModule } from 'ngx-linkedin';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
+import { environment } from '../environments/environment';
 
 @NgModule({
     declarations: [AppComponent],
     imports: [
         BrowserModule,
         NgxLinkedinModule.forRoot({
-            clientId: ':clientId:'
+            clientId: ':clientId:',
+            ssl: environment.production
         })
     ],
     providers: [],
